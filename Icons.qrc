@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/new/prefix1">
+        <file>SoundIco/iconfinder-musicmelodysoundaudio36-4105545_113821.ico</file>
+        <file>SoundIco/iconfinder-notes-music-sound-audio-player-4593178_122242.ico</file>
+        <file>SoundIco/iconfinder-volume-max-sound-speaker-audio-4593170_122277.ico</file>
+        <file>SoundIco/microphone-4_icon-icons.com_62159.ico</file>
+    </qresource>
+</RCC>

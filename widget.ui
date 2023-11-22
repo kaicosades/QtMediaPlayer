@@ -17,10 +17,10 @@
    <iconset>
     <normaloff>../SoundIco/iconfinder-musicmelodysoundaudio36-4105545_113821.ico</normaloff>../SoundIco/iconfinder-musicmelodysoundaudio36-4105545_113821.ico</iconset>
   </property>
-  <widget class="QPushButton" name="pushBattonPlay">
+  <widget class="QPushButton" name="pushButtonPlay">
    <property name="geometry">
     <rect>
-     <x>170</x>
+     <x>60</x>
      <y>130</y>
      <width>80</width>
      <height>21</height>
@@ -33,7 +33,7 @@
   <widget class="QPushButton" name="pushButtonPause">
    <property name="geometry">
     <rect>
-     <x>260</x>
+     <x>150</x>
      <y>130</y>
      <width>80</width>
      <height>21</height>
@@ -46,7 +46,7 @@
   <widget class="QPushButton" name="pushButtonStop">
    <property name="geometry">
     <rect>
-     <x>350</x>
+     <x>240</x>
      <y>130</y>
      <width>80</width>
      <height>21</height>
@@ -59,9 +59,9 @@
   <widget class="QLabel" name="labelComposition">
    <property name="geometry">
     <rect>
-     <x>170</x>
+     <x>70</x>
      <y>90</y>
-     <width>281</width>
+     <width>381</width>
      <height>20</height>
     </rect>
    </property>
@@ -73,7 +73,7 @@
    <property name="geometry">
     <rect>
      <x>60</x>
-     <y>130</y>
+     <y>550</y>
      <width>80</width>
      <height>21</height>
     </rect>
@@ -85,7 +85,7 @@
   <widget class="QPushButton" name="pushButtonPrev">
    <property name="geometry">
     <rect>
-     <x>460</x>
+     <x>420</x>
      <y>130</y>
      <width>51</width>
      <height>21</height>
@@ -98,7 +98,7 @@
   <widget class="QPushButton" name="pushButtonNext">
    <property name="geometry">
     <rect>
-     <x>520</x>
+     <x>480</x>
      <y>130</y>
      <width>51</width>
      <height>21</height>
@@ -152,25 +152,48 @@
     <rect>
      <x>80</x>
      <y>170</y>
-     <width>47</width>
-     <height>13</height>
+     <width>101</width>
+     <height>16</height>
     </rect>
    </property>
    <property name="text">
-    <string>Progress</string>
+    <string>Progress:</string>
    </property>
   </widget>
   <widget class="QLabel" name="labelDuration">
    <property name="geometry">
     <rect>
-     <x>590</x>
+     <x>600</x>
      <y>170</y>
-     <width>47</width>
-     <height>13</height>
+     <width>91</width>
+     <height>16</height>
     </rect>
    </property>
    <property name="text">
     <string>Duration:</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonMute">
+   <property name="geometry">
+    <rect>
+     <x>560</x>
+     <y>130</y>
+     <width>21</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QTableView" name="tableViewPlaylist">
+   <property name="geometry">
+    <rect>
+     <x>65</x>
+     <y>240</y>
+     <width>661</width>
+     <height>291</height>
+    </rect>
    </property>
   </widget>
  </widget>

@@ -5,6 +5,9 @@
 #include <QFileDialog>
 #include <QDir>
 #include <QTime>
+#include <QToolButton>
+
+#include <QMessageBox>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -22,11 +25,14 @@ Widget::Widget(QWidget *parent)
     ui->pushButtonPlay->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
     ui->pushButtonMute->setIcon(style()->standardIcon(QStyle::SP_MediaVolume));
 
+
+
     //          player init:
     m_player = new QMediaPlayer(this);
     m_player->setVolume(70);
     ui->labelVolume->setText(QString("Volume: ").append(QString::number(m_player->volume())));//get не прописывается
     ui->horizontalSliderVolume->setValue(m_player->volume());
+    ui->tableViewPlaylist->setSelectionBehavior(QAbstractItemView::SelectRows);
 
     connect(m_player, &QMediaPlayer::positionChanged, this, &Widget::on_position_changed);
     connect(m_player, &QMediaPlayer::durationChanged, this, &Widget::on_duration_changed);
@@ -43,12 +49,138 @@ Widget::Widget(QWidget *parent)
     m_player->setPlaylist(m_playlist);
 
     //connect(m_player, &QMediaPlayer::)
+
+
+    connect(ui->pushButtonPause, &QToolButton::clicked, this->m_player, &QMediaPlayer::pause);
+    connect(ui->pushButtonStop, &QToolButton::clicked, this->m_player,&QMediaPlayer::stop);
+    connect(ui->pushButtonPrev, &QToolButton::clicked, m_playlist, &QMediaPlaylist::previous );
+    connect(ui->pushButtonNext, &QToolButton::clicked, m_playlist, &QMediaPlaylist::next );
+
+    load_playlist(DEFAULT_PLAYLIST);
+
+    //connect(m_playlist, &QMediaPlaylist::currentIndexChanged, ui->tableViewPlaylist, &QTableView::selectRow); //отображает текущее аудио
+  //  connect(ui->tableViewPlaylist, &QTableView::doubleClicked, m_playlist_model,
+   //         [this](const QModelIndex& index)
+   // {
+   //     m_playlist->setCurrentIndex(index.row());
+    //    m_player->play();
+  //  }//&QMediaPlaylist::setCurrentIndex
+    //        );
+
+    connect(m_playlist, &QMediaPlaylist::currentIndexChanged, ui->tableViewPlaylist,
+            [this](int index) //отображает текущее аудио
+    {
+       ui->labelComposition->setText(m_playlist_model->data(m_playlist_model->index(index, 0)).toString());
+       this->setWindowTitle("Winamp - " + ui->labelComposition->text());
+       ui->tableViewPlaylist->selectRow(index);
+    }//&QMediaPlaylist::setCurrentIndex
+            );
+    connect(ui->tableViewPlaylist, &QTableView::doubleClicked, m_playlist_model,
+            [this](const QModelIndex& index){m_playlist->setCurrentIndex(index.row());
+    m_player->play();});
+
+
+    connect(ui->pushButtonCRL, &QToolButton::clicked, //реализует CRL, удаляет плейлист
+            [this]()
+    {
+        m_playlist->clear();
+        m_playlist_model->clear();
+    }
+            );
+
+    connect(ui->pushButtonDEL, &QToolButton::clicked,
+            [this]()
+    {
+        QItemSelectionModel* selection = ui->tableViewPlaylist->selectionModel();
+        QModelIndexList rows = selection->selectedRows();
+        for(QModelIndexList::iterator it = rows.begin(); it!= rows.end(); ++it)
+        {
+           // QMessageBox mb(QMessageBox::Icon::Information, m_playlist->)
+            if(m_playlist->removeMedia(it->row()))
+                m_playlist_model->removeRows(it->row(), 1);
+        }
+       // for (int i=0; i<rows.size(); i++)
+       // {
+
+        //}
+    }
+            );
 }
+
 
 Widget::~Widget()
 {
+    save_playlist(DEFAULT_PLAYLIST);
     delete m_player;
     delete ui;
+}
+
+
+void Widget::load_playlist(QString filename)
+{
+    QString format = filename.split('.').back();
+    m_playlist->load(QUrl::fromLocalFile(filename), format.toStdString().c_str());
+    for(int i =0; i<m_playlist->mediaCount();i++)
+    {
+        QMediaContent content = m_playlist->media(i);
+        QString url = content.canonicalUrl().url();
+        QList<QStandardItem*> items;
+        items.append(new QStandardItem(QDir(url).dirName()));
+        items.append(new QStandardItem(url));
+        m_playlist_model->appendRow(items);
+    }
+}
+
+
+void Widget::save_playlist(QString filename)
+{
+    QString format = filename.split('.').last();
+    m_playlist->save(QUrl::fromLocalFile(filename), format.toStdString().c_str());
+
+}
+
+
+void Widget::load_cue_playlist(QString filename)
+{
+
+    QString performer;
+    QString flac_file;
+    QFile file(filename);
+    //
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))return;
+    while(!file.atEnd())
+    {
+       // QByteArray  buffer = file.readLine();
+        QString buffer(file.readLine());
+       // mb.show();
+       // qDebug() << buffer << "\n";
+        if(buffer.split(' ')[0] == "PREFORMER")
+        {
+            performer = buffer.remove(0, strlen("PREFORMER")+1);
+            QMessageBox mb(QMessageBox::Icon::Information, "Info", performer, QMessageBox::Ok, this);
+            qDebug() << buffer << "\n";
+            qDebug() << performer << "\n";
+        }
+        if(buffer.split(' ')[0] == "FILE")
+        {
+            //flac_file = buffer.remove(0, strlen("FILE")+2);
+            flac_file = buffer.remove("FILE \"").remove("WAVE\n");
+            //flac_file = flac_file.remove()
+            QDir dir = QFileInfo(file).absoluteDir();
+            QString path = dir.absolutePath();
+            QString full_name = path+"/"+flac_file;
+            qDebug() << full_name << "\n";
+            qDebug() << flac_file << "\n";
+
+            QList<QStandardItem*> items;
+            items.append(new QStandardItem(dir.dirName()));
+            items.append(new QStandardItem(full_name));
+            m_playlist_model->appendRow(items);
+            m_playlist->addMedia(QUrl(full_name));
+        }
+
+    }
+    file.close();
 }
 
 
@@ -69,9 +201,11 @@ void Widget::on_pushButtonOpen_clicked()
     QStringList files = QFileDialog::getOpenFileNames(
                 this,
                 "Open files",
-                "C:\\Users\\user\\Desktop\\муз",
-                "Audio files (*.mp3 *.flac)"
+                "C:\\Users\\user\\Desktop\\ioc",
+                "Audio files (*.mp3 *.flac);; MP-3(*.mp3);; Flac (*.flac);; Playlists (*.m3u *.cue);; M3U (*.m3u);; CUE (*.cue)"
                 );
+    if(files.size()>1)
+    {
     for(QString filesPath: files)
     {
         QList<QStandardItem*> items;
@@ -79,6 +213,12 @@ void Widget::on_pushButtonOpen_clicked()
         items.append(new QStandardItem(filesPath));
         m_playlist_model->appendRow(items);
         m_playlist ->addMedia(QUrl(filesPath));
+    }
+    }
+    else
+    {
+        if(files.last().split('.').last() == "m3u")load_playlist(files.last());
+        if(files.last().split('.').last() == "cue")load_cue_playlist(files.last());
     }
 }
 
@@ -126,14 +266,30 @@ void Widget::on_pushButtonMute_clicked()
 }
 
 
-void Widget::on_pushButtonPrev_clicked()
+//void Widget::on_pushButtonPrev_clicked()
+//{
+//    m_playlist->previous();
+//}
+
+
+//void Widget::on_pushButtonNext_clicked()
+//{
+//    m_playlist->next();
+//}
+
+
+void Widget::on_checkBoxLoop_stateChanged(int arg1)
 {
-    m_playlist->previous();
+    m_playlist->setPlaybackMode(QMediaPlaylist::PlaybackMode::Sequential);
+    if(ui->checkBoxLoop->checkState())m_playlist->setPlaybackMode(QMediaPlaylist::PlaybackMode::Loop);
+    if(ui->checkBoxShuffle->checkState())m_playlist->setPlaybackMode(QMediaPlaylist::PlaybackMode::Random);
 }
 
 
-void Widget::on_pushButtonNext_clicked()
+void Widget::on_checkBoxShuffle_stateChanged(int arg1)
 {
-    m_playlist->next();
+    m_playlist->setPlaybackMode(QMediaPlaylist::PlaybackMode::Sequential);
+    if(ui->checkBoxLoop->checkState())m_playlist->setPlaybackMode(QMediaPlaylist::PlaybackMode::Loop);
+    if(ui->checkBoxShuffle->checkState())m_playlist->setPlaybackMode(QMediaPlaylist::PlaybackMode::Random);
 }
 
